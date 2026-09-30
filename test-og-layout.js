@@ -24,7 +24,7 @@ const ctx = {
 };
 
 const sandbox = { ctx, Math, console, module: { exports: {} } };
-const helpers = ["tokenize", "wrap", "ellipsize", "fitLines"]
+const helpers = ["tokenize", "wrap", "ellipsize", "fitLines", "shortHash", "isAscii", "slugify"]
   .map((n) => {
     const re = new RegExp("function\\s+" + n + "\\b[\\s\\S]*?\\n  \\}");
     const m = src.match(re);
@@ -34,8 +34,8 @@ const helpers = ["tokenize", "wrap", "ellipsize", "fitLines"]
   .join("\n\n");
 
 vm.createContext(sandbox);
-vm.runInContext(helpers + "\n;module.exports={tokenize,wrap,ellipsize,fitLines};", sandbox);
-const { tokenize, wrap, ellipsize, fitLines } = sandbox.module.exports;
+vm.runInContext(helpers + "\n;module.exports={tokenize,wrap,ellipsize,fitLines,slugify};", sandbox);
+const { tokenize, wrap, ellipsize, fitLines, slugify } = sandbox.module.exports;
 
 const W = 1200, PAD = 84, maxW = W - PAD * 2; // 1032
 let fail = 0;
@@ -123,6 +123,29 @@ for (const t of [
     "size=" + r.size + " lines=" + r.lines.length + " h=" + h.toFixed(0)
   );
 }
+console.log("\nslugify (ASCII-only, collision-free)");
+const PRESET_TITLES = [
+  "OpenCode 简介", "什么是大模型", "常见词汇", "常见大模型及厂商", "OpenCode 日常用法",
+  "OpenCode 工作原理", "OpenCode 自我说明", "上下文管理", "内置工具一览"
+];
+const slugs = new Map();
+for (const t of PRESET_TITLES) {
+  const s = slugify(t);
+  const asciiOk = /^[a-z0-9-]+$/.test(s);
+  const collide = slugs.has(s);
+  if (!asciiOk || collide) slugs.set(s, t);
+  check("  " + t, asciiOk && !collide, s + (collide ? "  COLLIDES with " + slugs.get(s) : ""));
+}
+for (const [input, label] of [["", "empty"], [null, "null"], [undefined, "undefined"]]) {
+  const s = slugify(input);
+  check("  " + label, /^[a-z0-9-]+$/.test(s) && s.length > 0, s);
+}
+check("  pure ascii title stays readable", slugify("Pure ASCII Title Here") === "pure-ascii-title-here", slugify("Pure ASCII Title Here"));
+check("  same title -> same slug (stable)", slugify("OpenCode 简介") === slugify("OpenCode 简介"));
+check("  long ascii title capped at 60", slugify("A very long english title that keeps going and going and going for a while").length <= 60,
+  slugify("A very long english title that keeps going and going and going for a while").length + " chars");
+check("  no trailing dash", PRESET_TITLES.every((t) => !slugify(t).endsWith("-")));
+
 console.log("\nrendered layout stays inside 1200x630");
 // mirrors the vertical budget in renderAt()
 const LABEL_BASE = 108, labelTop = 82, regionTop = 162, regionH = 262, FOOTER_BASE = 630 - 52;

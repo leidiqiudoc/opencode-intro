@@ -1,3 +1,4 @@
 .render/
 node_modules/
-og/
+# only a bundle extracted into the repo root; card/og/ must be committed
+/og/

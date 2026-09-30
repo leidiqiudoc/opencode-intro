@@ -825,23 +825,36 @@
     updateSnippet();
   }
 
-  function slugify(s) {
-    const base = (s || "opencode-intro")
-      .toLowerCase()
-      .replace(/[^\w一-龥]+/g, "-")
-      .replace(/^-+|-+$/g, "");
-    // Budget in UTF-8 bytes, not characters: CJK costs 3 bytes each and
-    // filesystems cap a path component at 255 bytes.
-    const enc = new TextEncoder();
-    let out = "";
-    let bytes = 0;
-    for (const ch of base) {
-      const n = enc.encode(ch).length;
-      if (bytes + n > 60) break;
-      out += ch;
-      bytes += n;
+  function isAscii(str) {
+    for (let i = 0; i < str.length; i++) {
+      if (str.charCodeAt(i) > 127) return false;
     }
-    return out.replace(/-+$/g, "") || "opencode-intro";
+    return true;
+  }
+
+  function shortHash(str) {
+    let h = 0x811c9dc5;
+    for (let i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 0x01000193) >>> 0;
+    }
+    return h.toString(36).slice(0, 6);
+  }
+
+  // ASCII-only file name. Crawlers and static hosts handle percent-encoded
+  // non-ASCII paths inconsistently, so non-latin characters are dropped rather
+  // than emitted. A short hash of the full title is appended when that happens:
+  // most chapter titles share the "OpenCode" prefix and would otherwise all
+  // collapse onto the same file name.
+  function slugify(s) {
+    const raw = String(s == null ? "" : s);
+    const ascii = raw
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+    if (isAscii(raw) && ascii) return ascii.slice(0, 60).replace(/-+$/, "");
+    if (ascii) return ascii.slice(0, 40).replace(/-+$/, "") + "-" + shortHash(raw);
+    return "og-" + shortHash(raw);
   }
 
   function currentTitle() {
