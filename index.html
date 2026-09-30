@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OG Image Generator · OpenCode 简介</title>
+<meta name="description" content="为 OpenCode 简介一文生成 1200×630 的 Open Graph 社交分享图。">
+<style>
+  :root {
+    --bg: #0a0a0b;
+    --panel: #121214;
+    --panel-2: #17171a;
+    --line: #26262b;
+    --text: #ededf0;
+    --muted: #8a8a94;
+    --accent: #e4e4e7;
+    --green: #4ade80;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB",
+            "Microsoft YaHei", "Noto Sans SC", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: var(--green); }
+
+  .shell {
+    max-width: 1520px;
+    margin: 0 auto;
+    padding: 32px 28px 64px;
+  }
+
+  header.top {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 18px;
+    margin-bottom: 28px;
+  }
+
+  header.top h1 {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: .2px;
+    margin: 0;
+  }
+
+  header.top .tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 3px 9px;
+  }
+
+  header.top a {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    text-decoration: none;
+    color: var(--muted);
+    margin-left: auto;
+  }
+  header.top a:hover { color: var(--text); }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 340px minmax(0, 1fr);
+    gap: 28px;
+    align-items: start;
+  }
+
+  @media (max-width: 1080px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 20px;
+  }
+
+  .panel + .panel { margin-top: 18px; }
+
+  .panel h2 {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 16px;
+    font-weight: 500;
+  }
+
+  .field { margin-bottom: 16px; }
+  .field:last-child { margin-bottom: 0; }
+
+  .field label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 7px;
+  }
+
+  .field input[type="text"],
+  .field select,
+  .field textarea {
+    width: 100%;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 13.5px;
+    padding: 9px 11px;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+  }
+
+  .field input[type="text"]:focus,
+  .field select:focus,
+  .field textarea:focus {
+    border-color: #4b4b55;
+    box-shadow: 0 0 0 3px rgba(255,255,255,.04);
+  }
+
+  .field textarea { resize: vertical; line-height: 1.5; }
+
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .themes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+
+  .theme-swatch {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    height: 46px;
+    cursor: pointer;
+    padding: 0;
+    position: relative;
+    overflow: hidden;
+    transition: border-color .15s, transform .1s;
+  }
+  .theme-swatch:hover { transform: translateY(-1px); }
+  .theme-swatch[aria-pressed="true"] { border-color: var(--text); }
+  .theme-swatch span {
+    position: absolute;
+    left: 7px; bottom: 6px;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: .4px;
+    opacity: .85;
+  }
+
+  .checks { display: grid; gap: 9px; }
+  .check { display: flex; align-items: center; gap: 9px; font-size: 13px; color: var(--text); }
+  .check input { accent-color: var(--green); width: 15px; height: 15px; }
+
+  .actions { display: grid; gap: 9px; }
+
+  button.act {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--panel-2);
+    color: var(--text);
+    padding: 10px 12px;
+    cursor: pointer;
+    text-align: left;
+    transition: background .15s, border-color .15s;
+  }
+  button.act:hover { background: #1f1f24; border-color: #3a3a42; }
+  button.act.primary { background: var(--text); color: #0a0a0b; border-color: var(--text); font-weight: 600; }
+  button.act.primary:hover { background: #fff; }
+
+  .stage {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 22px;
+  }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 22px;
+  }
+
+  .card-label {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 9px;
+  }
+
+  .card {
+    background: #1b1b1f;
+    border: 1px solid var(--line);
+    overflow: hidden;
+  }
+  .card-x { border-radius: 16px; }
+  .card-wx { border-radius: 8px; }
+
+  .card-img { position: relative; aspect-ratio: 1200 / 630; background: #000; }
+  .card-img canvas { display: block; width: 100%; height: 100%; }
+
+  .card-body { padding: 12px 14px 14px; }
+  .card-title {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.4;
+    color: #f2f2f4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .card-desc {
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--muted);
+    margin-top: 5px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .card-domain {
+    font-size: 11.5px;
+    color: var(--muted);
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .card-domain::before {
+    content: "";
+    width: 11px; height: 11px;
+    flex: 0 0 11px;
+    border-radius: 3px;
+    background: var(--green);
+  }
+
+  .hint {
+    font-size: 11.5px;
+    line-height: 1.6;
+    color: var(--muted);
+    margin-top: 8px;
+  }
+  .hint.warn { color: #fbbf24; }
+  .hint code {
+    font-family: var(--mono);
+    font-size: 11px;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 1px 5px;
+    color: var(--text);
+  }
+
+  .canvas-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1200 / 630;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #000;
+    box-shadow: 0 18px 50px rgba(0,0,0,.5);
+  }
+  .canvas-wrap canvas { display: block; width: 100%; height: 100%; }
+
+  .stage-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+  .stage-bar .spacer { flex: 1; }
+
+  pre.snippet {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    line-height: 1.7;
+    color: #c9c9d1;
+    margin: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  pre.snippet .k { color: var(--green); }
+
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 28px;
+    transform: translate(-50%, 20px);
+    background: var(--text);
+    color: #0a0a0b;
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 9px 16px;
+    border-radius: 999px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s, transform .2s;
+    z-index: 50;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="top">
+    <h1>OG Image Generator</h1>
+    <span class="tag">1200 × 630</span>
+    <span class="tag">1.91:1</span>
+    <a href="https://juejin.cn/post/7690398241330544666" target="_blank" rel="noopener">源文章 ↗</a>
+  </header>
+
+  <div class="layout">
+    <div>
+      <section class="panel">
+        <h2>内容</h2>
+        <div class="field">
+          <label for="preset">章节预设</label>
+          <select id="preset">
+            <option value="">自定义…</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="title">标题（必填）</label>
+          <textarea id="title" rows="3" placeholder="OpenCode 简介"></textarea>
+        </div>
+        <div class="field">
+          <label for="subtitle">副标题</label>
+          <input type="text" id="subtitle" placeholder="大模型 · 免费额度 · 上下文工程">
+        </div>
+        <div class="field">
+          <label for="author">作者</label>
+          <input type="text" id="author" placeholder="球哥v5">
+        </div>
+        <div class="row">
+          <div class="field">
+            <label for="footerLeft">左下标签</label>
+            <input type="text" id="footerLeft" placeholder="OPENCODE">
+          </div>
+          <div class="field">
+            <label for="footerRight">右下提示</label>
+            <input type="text" id="footerRight" placeholder="opencode.ai">
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>外观</h2>
+        <div class="field">
+          <label>主题</label>
+          <div class="themes" id="themes"></div>
+        </div>
+        <div class="field">
+          <label for="fontSize">标题字号微调 <span id="fontSizeVal" style="color:var(--text)">auto</span></label>
+          <input type="range" id="fontSize" min="0" max="140" value="0" style="width:100%">
+        </div>
+        <div class="checks">
+          <label class="check"><input type="checkbox" id="showGrid" checked> 背景网格</label>
+          <label class="check"><input type="checkbox" id="showPrompt" checked> 终端提示符</label>
+          <label class="check"><input type="checkbox" id="showAvatar" checked> 作者头像</label>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>发布</h2>
+        <div class="field">
+          <label for="siteUrl">站点地址（部署后的绝对地址，结尾带 /）</label>
+          <input type="text" id="siteUrl" placeholder="https://you.github.io/opencode-intro/">
+          <div class="hint" id="siteUrlHint">未填写：og:image 将是占位符，爬虫抓不到图片</div>
+        </div>
+        <div class="field">
+          <label for="articleUrl">原文链接（卡片 CTA 跳转）</label>
+          <input type="text" id="articleUrl" value="https://juejin.cn/post/7690398241330544666">
+        </div>
+        <div class="actions">
+          <button class="act primary" id="downloadBundle">下载发布包 (.zip)</button>
+        </div>
+        <div class="hint" style="margin-top:12px">
+          zip 内含 <code>index.html</code> + <code>og/*.png</code>，解压后整个目录拖进 Vercel / Netlify 即可；
+          GitHub Pages 直接提交到仓库根目录。
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>导出</h2>
+        <div class="actions">
+          <button class="act primary" id="download">下载 PNG · 1200×630</button>
+          <button class="act" id="download2x">下载 PNG · 2x (2400×1260)</button>
+          <button class="act" id="copySnippet">复制 meta 标签</button>
+          <button class="act" id="copyLink">复制带参数分享链接</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>meta 标签</h2>
+        <pre class="snippet" id="snippet"></pre>
+      </section>
+    </div>
+
+    <div>
+      <div class="stage">
+        <div class="canvas-wrap">
+          <canvas id="og" width="1200" height="630"></canvas>
+        </div>
+        <div class="stage-bar">
+          <span id="status">就绪</span>
+          <span class="spacer"></span>
+          <span>提示：Twitter / 微信 / X 分享均读取 og:image</span>
+        </div>
+      </div>
+
+      <section class="panel" style="margin-top:18px">
+        <h2>卡片预览</h2>
+        <div class="cards">
+          <div class="card-wrap">
+            <div class="card-label">X / Twitter</div>
+            <div class="card card-x">
+              <div class="card-img"><canvas id="previewA" width="1200" height="630"></canvas></div>
+              <div class="card-body">
+                <div class="card-title" id="pvTitleA">标题</div>
+                <div class="card-domain" id="pvDomainA">example.com</div>
+              </div>
+            </div>
+          </div>
+          <div class="card-wrap">
+            <div class="card-label">微信</div>
+            <div class="card card-wx">
+              <div class="card-img"><canvas id="previewB" width="1200" height="630"></canvas></div>
+              <div class="card-body">
+                <div class="card-title" id="pvTitleB">标题</div>
+                <div class="card-desc" id="pvDescB">副标题</div>
+                <div class="card-domain" id="pvDomainB">example.com</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  "use strict";
+
+  const W = 1200, H = 630;
+  const canvas = document.getElementById("og");
+  const ctx = canvas.getContext("2d");
+
+  const SANS = '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", Roboto, Helvetica, Arial, sans-serif';
+  const MONO = 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace';
+
+  const THEMES = {
+    terminal: { bg: "#0a0a0b", panel: "#111113", line: "#2a2a30", text: "#f4f4f5", sub: "#a1a1aa", accent: "#4ade80" },
+    paper:    { bg: "#faf9f7", panel: "#ffffff", line: "#e4e2dd", text: "#111113", sub: "#6b6b73", accent: "#c2410c" },
+    ocean:    { bg: "#0b1220", panel: "#0f1a2e", line: "#1e2d4a", text: "#eaf2ff", sub: "#94a9c9", accent: "#60a5fa" },
+    sunset:   { bg: "#1a0f14", panel: "#26141b", line: "#3d212b", text: "#fff1f2", sub: "#c9a3ad", accent: "#fb7185" }
+  };
+  const THEME_LABELS = { terminal: "TERM", paper: "PAPER", ocean: "OCEAN", sunset: "SUNSET" };
+
+  const PRESETS = [
+    { title: "OpenCode 简介", subtitle: "从大模型原理到 Agent Loop 的完整拆解", footerLeft: "OPENCODE" },
+    { title: "什么是大模型", subtitle: "小模型 vs 大模型：参数、算力与泛化能力", footerLeft: "01 / BASICS" },
+    { title: "常见词汇", subtitle: "Token · 多模态 · RAG · 模型参数", footerLeft: "02 / GLOSSARY" },
+    { title: "常见大模型及厂商", subtitle: "OpenAI / Anthropic / DeepSeek / Qwen / Kimi", footerLeft: "03 / LANDSCAPE" },
+    { title: "OpenCode 日常用法", subtitle: "安装、选模型、连接供应商与配置文件", footerLeft: "04 / GETTING STARTED" },
+    { title: "OpenCode 工作原理", subtitle: "Agent Loop：上下文、工具调用与上下文成本", footerLeft: "05 / AGENT LOOP" },
+    { title: "OpenCode 自我说明", subtitle: "整体架构、Agent 体系、扩展系统与内置工具", footerLeft: "06 / INTERNALS" },
+    { title: "上下文管理", subtitle: "System Prompt 构建与 Compaction 自动压缩", footerLeft: "CONTEXT" },
+    { title: "内置工具一览", subtitle: "bash · edit · read · grep · webfetch · lsp", footerLeft: "TOOLS" }
+  ];
+
+  const el = (id) => document.getElementById(id);
+  const ui = {
+    preset: el("preset"), title: el("title"), subtitle: el("subtitle"), author: el("author"),
+    footerLeft: el("footerLeft"), footerRight: el("footerRight"),
+    siteUrl: el("siteUrl"), articleUrl: el("articleUrl"), siteUrlHint: el("siteUrlHint"),
+    fontSize: el("fontSize"), fontSizeVal: el("fontSizeVal"),
+    showGrid: el("showGrid"), showPrompt: el("showPrompt"), showAvatar: el("showAvatar"),
+    themes: el("themes"), snippet: el("snippet"), status: el("status"), toast: el("toast")
+  };
+
+  const state = { theme: "terminal" };
+
+  function toast(msg) {
+    ui.toast.textContent = msg;
+    ui.toast.classList.add("show");
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => ui.toast.classList.remove("show"), 1600);
+  }
+
+  function roundRect(c, x, y, w, h, r) {
+    const rr = Math.min(r, w / 2, h / 2);
+    c.beginPath();
+    c.moveTo(x + rr, y);
+    c.arcTo(x + w, y, x + w, y + h, rr);
+    c.arcTo(x + w, y + h, x, y + h, rr);
+    c.arcTo(x, y + h, x, y, rr);
+    c.arcTo(x, y, x + w, y, rr);
+    c.closePath();
+  }
+
+  // CJK-aware segmentation: CJK breaks anywhere, latin breaks on spaces.
+  function tokenize(text) {
+    const out = [];
+    let buf = "";
+    for (const ch of text) {
+      const isCJK = /[\u3000-\u9fff\uff00-\uffef]/.test(ch);
+      if (isCJK) {
+        if (buf) { out.push(buf); buf = ""; }
+        out.push(ch);
+      } else if (ch === " ") {
+        if (buf) { out.push(buf); buf = ""; }
+        out.push(" ");
+      } else {
+        buf += ch;
+      }
+    }
+    if (buf) out.push(buf);
+    return out;
+  }
+
+  // Returns { lines, truncated }. Text is broken per-character for CJK and
+  // per-word for latin. maxLines is a hard cap: overflow is ellipsized into the
+  // last line rather than clipped mid-character.
+  function wrap(text, maxWidth, maxLines) {
+    const toks = tokenize(text);
+    const lines = [];
+    let line = "";
+    let truncated = false;
+    const pushLine = () => {
+      const t = line.replace(/\s+$/, "");
+      if (t) lines.push(t);
+      line = "";
+    };
+    for (const t of toks) {
+      const next = line + t;
+      if (ctx.measureText(next).width <= maxWidth || line === "") {
+        line = next;
+        continue;
+      }
+      // current line is the last one we're allowed to fill
+      if (maxLines && lines.length === maxLines - 1) { truncated = true; break; }
+      pushLine();
+      line = t === " " ? "" : t;
+    }
+    pushLine();
+
+    if (truncated && lines.length) {
+      let last = lines[lines.length - 1];
+      while (last.length > 1 && ctx.measureText(last + "…").width > maxWidth) last = last.slice(0, -1);
+      lines[lines.length - 1] = last.replace(/\s+$/, "") + "…";
+    }
+    return { lines, truncated };
+  }
+
+  function ellipsize(text, maxWidth) {
+    if (ctx.measureText(text).width <= maxWidth) return text;
+    let s = text;
+    while (s.length > 1 && ctx.measureText(s + "…").width > maxWidth) s = s.slice(0, -1);
+    return s + "…";
+  }
+
+  // Shrinks the type until the wrapped title fits the box. Prefers a smaller
+  // font over cutting text off, so truncation only happens at minSize.
+  function fitLines(text, { maxWidth, maxHeight, maxSize, minSize, lineRatio, maxLines, weight, family }) {
+    let fallback = null;
+    for (let size = maxSize; size >= minSize; size -= 2) {
+      ctx.font = `${weight} ${size}px ${family}`;
+      const r = wrap(text, maxWidth, maxLines);
+      if (!r.truncated && r.lines.length * size * lineRatio <= maxHeight) {
+        return { size, lines: r.lines };
+      }
+      fallback = { size, lines: r.lines };
+    }
+    ctx.font = `${weight} ${minSize}px ${family}`;
+    return fallback;
+  }
+
+  function avatar(c, x, y, r, name, accent) {
+    c.save();
+    c.beginPath();
+    c.arc(x, y, r, 0, Math.PI * 2);
+    c.fillStyle = accent;
+    c.globalAlpha = 0.16;
+    c.fill();
+    c.globalAlpha = 1;
+    c.strokeStyle = accent;
+    c.lineWidth = 1.5;
+    c.stroke();
+    const ch = (name || "?").trim().slice(0, 1) || "?";
+    c.fillStyle = accent;
+    c.font = `600 ${Math.round(r * 0.95)}px ${SANS}`;
+    c.textAlign = "center";
+    c.textBaseline = "middle";
+    c.fillText(ch, x, y + 1);
+    c.restore();
+  }
+
+  function isDark(hex) {
+    const n = parseInt(hex.slice(1), 16);
+    const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    return (0.299 * r + 0.587 * g + 0.114 * b) < 128;
+  }
+
+  function drawGrid(c, t) {
+    const dark = isDark(t.bg);
+    const line = dark ? "rgba(255,255,255,0.035)" : "rgba(0,0,0,0.04)";
+    c.save();
+    c.strokeStyle = line;
+    c.lineWidth = 1;
+    const step = 48;
+    for (let x = 0; x <= W; x += step) {
+      c.beginPath(); c.moveTo(x + 0.5, 0); c.lineTo(x + 0.5, H); c.stroke();
+    }
+    for (let y = 0; y <= H; y += step) {
+      c.beginPath(); c.moveTo(0, y + 0.5); c.lineTo(W, y + 0.5); c.stroke();
+    }
+    const g = c.createRadialGradient(W * 0.78, H * 0.1, 0, W * 0.78, H * 0.1, W * 0.6);
+    g.addColorStop(0, dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)");
+    g.addColorStop(1, "rgba(0,0,0,0)");
+    c.fillStyle = g;
+    c.fillRect(0, 0, W, H);
+    c.restore();
+  }
+
+  function render() { renderAt(1); }
+
+  function renderAt(s) {
+    s = s || 1;
+    const th = THEMES[state.theme];
+    const t0 = performance.now();
+
+    ctx.setTransform(s, 0, 0, s, 0, 0);
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    if ("letterSpacing" in ctx) ctx.letterSpacing = "0px";
+
+    ctx.fillStyle = th.bg;
+    ctx.fillRect(0, 0, W, H);
+
+    const light = !isDark(th.bg);
+    if (ui.showGrid.checked) drawGrid(ctx, th);
+
+    const padX = 84;
+    const maxW = W - padX * 2;
+
+    // accent bar
+    ctx.fillStyle = th.accent;
+    ctx.fillRect(padX, 82, 6, 34);
+    ctx.font = `600 20px ${MONO}`;
+    if ("letterSpacing" in ctx) ctx.letterSpacing = "2px";
+    ctx.fillStyle = th.sub;
+    ctx.fillText(ellipsize((ui.footerLeft.value || "OPENCODE").toUpperCase(), maxW - 40), padX + 22, 108);
+    if ("letterSpacing" in ctx) ctx.letterSpacing = "0px";
+
+    // terminal prompt + badge (top right). The badge is pinned to the right
+    // edge and the prompt is laid out to its left so the two never collide.
+    if (ui.showPrompt.checked) {
+      const bw = 74, bh = 32, by = 83;
+      const bx = W - padX - bw;
+      roundRect(ctx, bx, by, bw, bh, 8);
+      ctx.strokeStyle = th.line;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = th.sub;
+      ctx.font = `500 15px ${MONO}`;
+      ctx.textAlign = "center";
+      ctx.fillText("TUI", bx + bw / 2, by + 21);
+      ctx.textAlign = "left";
+
+      ctx.font = `500 19px ${MONO}`;
+      const wordW = ctx.measureText("opencode").width;
+      const px = bx - 44 - wordW;
+      if (px > padX + 300) {
+        ctx.fillStyle = th.accent;
+        ctx.fillText("$", px - 14, 108);
+        ctx.fillStyle = light ? th.sub : "rgba(255,255,255,0.55)";
+        ctx.fillText("opencode", px, 108);
+      }
+    }
+
+    // --- vertical budget -------------------------------------------------
+    // The subtitle is a fixed 30px, so measure it first: the space it takes
+    // determines how much height the title is allowed to use.
+    const subText = ui.subtitle.value.trim();
+    ctx.font = `400 30px ${SANS}`;
+    const subLines = subText ? wrap(subText, maxW, 2).lines : [];
+    const subBlock = subLines.length ? 53 + (subLines.length - 1) * 42 : 0;
+
+    const regionTop = 162;
+    const regionH = 262;
+    const titleMaxH = regionH - 31 - subBlock;
+
+    const titleText = (ui.title.value || "OpenCode 简介").trim() || "OpenCode 简介";
+    const tweak = Number(ui.fontSize.value);
+    const fit = fitLines(titleText, {
+      maxWidth: maxW,
+      maxHeight: titleMaxH,
+      maxSize: 92,
+      minSize: 34,
+      lineRatio: 1.22,
+      maxLines: 3,
+      weight: 700,
+      family: SANS
+    });
+    const size = tweak > 0 ? tweak : fit.size;
+    const lines = fitLines(titleText, {
+      maxWidth: maxW,
+      maxHeight: titleMaxH,
+      maxSize: size,
+      minSize: size,
+      lineRatio: 1.22,
+      maxLines: 3,
+      weight: 700,
+      family: SANS
+    }).lines;
+    ui.fontSizeVal.textContent = tweak > 0 ? size + "px" : "auto · " + size + "px";
+
+    const lineStep = Math.round(size * 1.22);
+    const descender = Math.round(size * 0.22);
+    const groupH = size + (lines.length - 1) * lineStep + descender + 26 + 5 + subBlock;
+    const groupTop = regionTop + Math.max(0, (regionH - groupH) / 2);
+    const divY = Math.min(Math.max(470, groupTop + groupH + 46), H - 108);
+
+    // --- paint -----------------------------------------------------------
+    ctx.font = `700 ${size}px ${SANS}`;
+    ctx.fillStyle = th.text;
+    let y = groupTop + size;
+    for (const line of lines) {
+      ctx.fillText(line, padX, y);
+      y += lineStep;
+    }
+
+    // underline accent under title block
+    const ruleTop = groupTop + size + (lines.length - 1) * lineStep + descender + 26;
+    ctx.fillStyle = th.accent;
+    ctx.globalAlpha = 0.9;
+    ctx.fillRect(padX, ruleTop, 96, 5);
+    ctx.globalAlpha = 1;
+
+    if (subLines.length) {
+      ctx.font = `400 30px ${SANS}`;
+      ctx.fillStyle = th.sub;
+      let sy = ruleTop + 5 + 53;
+      for (const line of subLines) {
+        ctx.fillText(line, padX, sy);
+        sy += 42;
+      }
+    }
+
+    ctx.strokeStyle = th.line;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padX, divY + 0.5);
+    ctx.lineTo(W - padX, divY + 0.5);
+    ctx.stroke();
+
+    // footer
+    const fy = H - 52;
+    let fx = padX;
+    const author = ui.author.value.trim();
+    if (author && ui.showAvatar.checked) {
+      avatar(ctx, padX + 22, fy - 8, 22, author, th.accent);
+      ctx.font = `500 22px ${SANS}`;
+      ctx.fillStyle = th.text;
+      ctx.fillText(ellipsize(author, 320), padX + 58, fy);
+      fx = padX + 58 + ctx.measureText(ellipsize(author, 320)).width + 26;
+    } else if (author) {
+      ctx.font = `500 22px ${SANS}`;
+      ctx.fillStyle = th.text;
+      ctx.fillText(ellipsize(author, 320), padX, fy);
+      fx = padX + ctx.measureText(ellipsize(author, 320)).width + 26;
+    }
+
+    if (fx > padX + 40) {
+      ctx.fillStyle = th.line;
+      ctx.fillRect(fx, fy - 20, 1, 30);
+      fx += 20;
+    }
+
+    const right = ui.footerRight.value.trim() || "opencode.ai";
+    ctx.font = `500 20px ${MONO}`;
+    if ("letterSpacing" in ctx) ctx.letterSpacing = "0.5px";
+    const rw = ctx.measureText(right).width;
+    ctx.fillStyle = th.accent;
+    ctx.fillText(right, W - padX - rw, fy);
+    if ("letterSpacing" in ctx) ctx.letterSpacing = "0px";
+
+    ui.status.textContent = `渲染 ${(performance.now() - t0).toFixed(1)}ms · ${size}px · ${lines.length} 行`;
+    updateSiteHint();
+    paintPreviews();
+    updateSnippet();
+  }
+
+  function slugify(s) {
+    const base = (s || "opencode-intro")
+      .toLowerCase()
+      .replace(/[^\w一-龥]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+    // Budget in UTF-8 bytes, not characters: CJK costs 3 bytes each and
+    // filesystems cap a path component at 255 bytes.
+    const enc = new TextEncoder();
+    let out = "";
+    let bytes = 0;
+    for (const ch of base) {
+      const n = enc.encode(ch).length;
+      if (bytes + n > 60) break;
+      out += ch;
+      bytes += n;
+    }
+    return out.replace(/-+$/g, "") || "opencode-intro";
+  }
+
+  function currentTitle() {
+    return (ui.title.value || "OpenCode 简介").trim() || "OpenCode 简介";
+  }
+
+  // og:image must be an absolute URL for crawlers to fetch it, so the site
+  // address has to be filled in before the bundle is generated.
+  function siteBase() {
+    const raw = ui.siteUrl.value.trim();
+    if (!raw) return "";
+    return raw.endsWith("/") ? raw : raw + "/";
+  }
+
+  function imageUrl() {
+    const base = siteBase();
+    if (!base) return "{{SITE_URL}}og/" + slugify(currentTitle()) + ".png";
+    return base + "og/" + slugify(currentTitle()) + ".png";
+  }
+
+  function pageUrl() {
+    return siteBase() || "{{SITE_URL}}";
+  }
+
+  function updateSiteHint() {
+    const ok = !!siteBase();
+    ui.siteUrlHint.classList.toggle("warn", !ok);
+    ui.siteUrlHint.textContent = ok
+      ? "✓ og:image → " + imageUrl()
+      : "未填写：og:image 将是占位符，爬虫抓不到图片";
+  }
+
+  // ---- card previews -------------------------------------------------
+  function paintPreviews() {
+    const th = THEMES[state.theme];
+    for (const id of ["previewA", "previewB"]) {
+      const dst = el(id);
+      if (!dst) continue;
+      dst.getContext("2d").drawImage(canvas, 0, 0, dst.width, dst.height);
+    }
+    el("pvTitleA").textContent = currentTitle();
+    el("pvTitleB").textContent = currentTitle();
+    el("pvDescB").textContent = ui.subtitle.value.trim() || "在掘金查看完整拆解过程";
+    const host = siteBase();
+    try {
+      el("pvDomainA").lastChild.textContent = host ? new URL(host).host : "部署后显示你的域名";
+    } catch (e) {
+      el("pvDomainA").lastChild.textContent = "部署后显示你的域名";
+    }
+    el("pvDomainB").lastChild.textContent = el("pvDomainA").lastChild.textContent;
+    void th;
+  }
+
+  function updateSnippet() {
+    const base = location.origin + location.pathname.replace(/[^/]*$/, "");
+    const img = `og/${slugify(ui.title.value)}.png`;
+    const html =
+`<meta property="og:type" content="article" />
+<meta property="og:title" content="${escapeAttr(ui.title.value || "OpenCode 简介")}" />
+<meta property="og:description" content="${escapeAttr(ui.subtitle.value)}" />
+<meta property="og:image" content="${base}${img}" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="${escapeAttr(ui.title.value || "OpenCode 简介")}" />
+<meta name="twitter:image" content="${base}${img}" />`;
+    ui.snippet.textContent = html;
+  }
+
+  function escapeAttr(s) {
+    return String(s || "").replace(/"/g, "&quot;");
+  }
+
+  function stateToQuery() {
+    const p = new URLSearchParams();
+    const pairs = {
+      title: ui.title.value, sub: ui.subtitle.value, author: ui.author.value,
+      l: ui.footerLeft.value, r: ui.footerRight.value, theme: state.theme,
+      fs: ui.fontSize.value, grid: ui.showGrid.checked ? 1 : 0,
+      prompt: ui.showPrompt.checked ? 1 : 0, avatar: ui.showAvatar.checked ? 1 : 0
+    };
+    for (const [k, v] of Object.entries(pairs)) if (v !== "" && v !== null) p.set(k, v);
+    return p.toString();
+  }
+
+  function applyQuery() {
+    const p = new URLSearchParams(location.search);
+    if (!p.has("title")) return;
+    ui.title.value = p.get("title") || "";
+    ui.subtitle.value = p.get("sub") || "";
+    ui.author.value = p.get("author") || "";
+    ui.footerLeft.value = p.get("l") || "OPENCODE";
+    ui.footerRight.value = p.get("r") || "";
+    if (THEMES[p.get("theme")]) state.theme = p.get("theme");
+    if (p.has("fs")) ui.fontSize.value = p.get("fs");
+    if (p.has("grid")) ui.showGrid.checked = p.get("grid") === "1";
+    if (p.has("prompt")) ui.showPrompt.checked = p.get("prompt") === "1";
+    if (p.has("avatar")) ui.showAvatar.checked = p.get("avatar") === "1";
+  }
+
+  // ---- minimal store-only ZIP writer --------------------------------
+  // Enough to bundle a static site (a few uncompressed files) with no deps.
+  const CRC_TABLE = (() => {
+    const t = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+      t[n] = c >>> 0;
+    }
+    return t;
+  })();
+
+  function crc32(bytes) {
+    let c = 0xffffffff;
+    for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xff] ^ (c >>> 8);
+    return (c ^ 0xffffffff) >>> 0;
+  }
+
+  function makeZip(files) {
+    const enc = new TextEncoder();
+    const now = new Date();
+    const dosTime = (now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1);
+    const dosDate = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+    const parts = [];
+    const central = [];
+    let offset = 0;
+
+    for (const f of files) {
+      const name = enc.encode(f.name);
+      const data = f.data;
+      const crc = crc32(data);
+
+      const lh = new Uint8Array(30 + name.length);
+      const dv = new DataView(lh.buffer);
+      dv.setUint32(0, 0x04034b50, true);
+      dv.setUint16(4, 20, true);
+      dv.setUint16(6, 0x0800, true); // bit 11: filename is UTF-8
+      dv.setUint16(8, 0, true);
+      dv.setUint16(10, dosTime, true);
+      dv.setUint16(12, dosDate, true);
+      dv.setUint32(14, crc, true);
+      dv.setUint32(18, data.length, true);
+      dv.setUint32(22, data.length, true);
+      dv.setUint16(26, name.length, true);
+      dv.setUint16(28, 0, true);
+      lh.set(name, 30);
+
+      const ch = new Uint8Array(46 + name.length);
+      const cv = new DataView(ch.buffer);
+      cv.setUint32(0, 0x02014b50, true);
+      cv.setUint16(4, 20, true);
+      cv.setUint16(6, 20, true);
+      cv.setUint16(8, 0x0800, true); // bit 11: filename is UTF-8
+      cv.setUint16(10, 0, true);
+      cv.setUint16(12, dosTime, true);
+      cv.setUint16(14, dosDate, true);
+      cv.setUint32(16, crc, true);
+      cv.setUint32(20, data.length, true);
+      cv.setUint32(24, data.length, true);
+      cv.setUint16(28, name.length, true);
+      cv.setUint32(42, offset, true);
+      ch.set(name, 46);
+
+      parts.push(lh, data);
+      central.push(ch);
+      offset += lh.length + data.length;
+    }
+
+    const cdSize = central.reduce((a, b) => a + b.length, 0);
+    const eocd = new Uint8Array(22);
+    const ev = new DataView(eocd.buffer);
+    ev.setUint32(0, 0x06054b50, true);
+    ev.setUint16(8, files.length, true);
+    ev.setUint16(10, files.length, true);
+    ev.setUint32(12, cdSize, true);
+    ev.setUint32(16, offset, true);
+
+    return new Blob(parts.concat(central, [eocd]), { type: "application/zip" });
+  }
+
+  function publishPage() {
+    const title = escapeAttr(currentTitle());
+    const desc = escapeAttr(ui.subtitle.value.trim());
+    const img = imageUrl();
+    const page = pageUrl();
+    const article = escapeAttr(ui.articleUrl.value.trim());
+    const raw = ui.subtitle.value.trim();
+
+    return `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${title}</title>
+<meta name="description" content="${desc}">
+
+<!-- Open Graph：微信 / X / Facebook / LinkedIn 分享时读取 -->
+<meta property="og:type" content="article">
+<meta property="og:url" content="${page}">
+<meta property="og:title" content="${title}">
+<meta property="og:description" content="${desc}">
+<meta property="og:image" content="${img}">
+<meta property="og:image:secure_url" content="${img}">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:site_name" content="${title}">
+
+<!-- Twitter / X -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:url" content="${page}">
+<meta name="twitter:title" content="${title}">
+<meta name="twitter:description" content="${desc}">
+<meta name="twitter:image" content="${img}">
+<meta name="twitter:image:width" content="1200">
+<meta name="twitter:image:height" content="630">
+
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 40px 20px;
+    background: #0a0a0b;
+    color: #ededf0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+      "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  main { width: 100%; max-width: 860px; }
+  .card {
+    border: 1px solid #26262b;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #111113;
+  }
+  .card img { display: block; width: 100%; height: auto; }
+  .body { padding: 26px 30px 30px; }
+  h1 {
+    position: absolute; width: 1px; height: 1px;
+    padding: 0; margin: -1px; overflow: hidden;
+    clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+  .row {
+    display: flex; align-items: center; gap: 18px;
+    flex-wrap: wrap; justify-content: space-between;
+  }
+  a.cta {
+    display: inline-block;
+    background: #ededf0;
+    color: #0a0a0b;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 11px 20px;
+    border-radius: 8px;
+    white-space: nowrap;
+  }
+  a.cta:hover { background: #fff; }
+  .meta {
+    font-size: 12px; color: #6b6b73;
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+  }
+</style>
+</head>
+<body>
+<main>
+  <div class="card">
+    <img src="og/${slugify(currentTitle())}.png" alt="${title}" width="1200" height="630">
+    <div class="body">
+      <h1>${title}</h1>
+      <div class="row">
+        <a class="cta" href="${article}" target="_blank" rel="noopener">在掘金查看原文 →</a>
+        <span class="meta">og:image · 1200×630</span>
+      </div>
+    </div>
+  </div>
+</main>
+</body>
+</html>
+`;
+  }
+
+  function escapeHtml(s) {
+    return String(s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
+  function downloadBundle() {
+    if (!siteBase() && !confirm("尚未填写「站点地址」。\n\nog:image 必须是绝对地址，否则分享卡片抓不到图。\n\n仍然导出（会写入 {{SITE_URL}} 占位符，部署后需重新导出）？")) {
+      return;
+    }
+    canvas.toBlob(async (blob) => {
+      try {
+        if (!blob) return toast("PNG 生成失败");
+        const buf = await blob.arrayBuffer();
+        const zip = makeZip([
+          { name: "index.html", data: new TextEncoder().encode(publishPage()) },
+          { name: "og/" + slugify(currentTitle()) + ".png", data: new Uint8Array(buf) }
+        ]);
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(zip);
+        a.download = "og-card.zip";
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        toast(siteBase() ? "发布包已导出" : "已导出（含占位符）");
+      } catch (err) {
+        toast("导出失败：" + err.message);
+      }
+    }, "image/png");
+  }
+
+  function download(scale) {
+    const wasW = canvas.width, wasH = canvas.height;
+    if (scale !== 1) {
+      canvas.width = W * scale;
+      canvas.height = H * scale;
+      renderAt(scale);
+    }
+    canvas.toBlob((blob) => {
+      try {
+        if (scale !== 1) {
+          canvas.width = wasW; canvas.height = wasH;
+          renderAt(1);
+        }
+        if (!blob) return toast("导出失败");
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `${slugify(ui.title.value)}@${W * scale}x${H * scale}.png`;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        toast(`已导出 ${W * scale}×${H * scale}`);
+      } catch (err) {
+        canvas.width = wasW; canvas.height = wasH;
+        renderAt(1);
+        toast("导出失败：" + err.message);
+      }
+    }, "image/png");
+  }
+
+  function initThemes() {
+    for (const [key, t] of Object.entries(THEMES)) {
+      const b = document.createElement("button");
+      b.className = "theme-swatch";
+      b.type = "button";
+      b.dataset.theme = key;
+      b.setAttribute("aria-pressed", String(key === state.theme));
+      b.style.background = `linear-gradient(135deg, ${t.bg} 0%, ${t.panel} 100%)`;
+      b.innerHTML = `<span style="color:${t.accent}">${THEME_LABELS[key]}</span>`;
+      b.addEventListener("click", () => {
+        state.theme = key;
+        [...ui.themes.children].forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.theme === key)));
+        render();
+      });
+      ui.themes.appendChild(b);
+    }
+  }
+
+  function initPresets() {
+    for (const p of PRESETS) {
+      const o = document.createElement("option");
+      o.value = p.title;
+      o.textContent = p.title + (p.subtitle ? " — " + p.subtitle : "");
+      o.dataset.sub = p.subtitle || "";
+      o.dataset.left = p.footerLeft || "";
+      ui.preset.appendChild(o);
+    }
+    ui.preset.addEventListener("change", () => {
+      const o = ui.preset.selectedOptions[0];
+      if (!o || !o.value) return;
+      ui.title.value = o.value;
+      ui.subtitle.value = o.dataset.sub || "";
+      ui.footerLeft.value = o.dataset.left || "";
+      render();
+    });
+  }
+
+  function bind() {
+    for (const node of [ui.title, ui.subtitle, ui.author, ui.footerLeft, ui.footerRight]) {
+      node.addEventListener("input", render);
+    }
+    for (const node of [ui.siteUrl, ui.articleUrl]) {
+      node.addEventListener("input", () => { updateSiteHint(); paintPreviews(); });
+    }
+    for (const node of [ui.showGrid, ui.showPrompt, ui.showAvatar]) {
+      node.addEventListener("change", render);
+    }
+    ui.fontSize.addEventListener("input", render);
+
+    el("downloadBundle").addEventListener("click", downloadBundle);
+    el("download").addEventListener("click", () => download(1));
+    el("download2x").addEventListener("click", () => download(2));
+    el("copySnippet").addEventListener("click", async () => {
+      try { await navigator.clipboard.writeText(ui.snippet.textContent); toast("已复制 meta 标签"); }
+      catch { toast("复制失败，请手动选择"); }
+    });
+    el("copyLink").addEventListener("click", async () => {
+      const url = location.origin + location.pathname + "?" + stateToQuery();
+      try { await navigator.clipboard.writeText(url); toast("已复制分享链接"); }
+      catch { toast("复制失败，请手动选择"); }
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "s") { e.preventDefault(); download(1); }
+    });
+
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(render);
+  }
+
+  initThemes();
+  initPresets();
+  applyQuery();
+  bind();
+
+  if (!ui.title.value.trim()) {
+    ui.title.value = PRESETS[0].title;
+    ui.subtitle.value = PRESETS[0].subtitle;
+    ui.footerLeft.value = PRESETS[0].footerLeft;
+    ui.author.value = "球哥v5";
+  }
+  render();
+})();
+</script>
+</body>
+</html>

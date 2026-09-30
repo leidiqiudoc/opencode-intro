@@ -1,0 +1,15 @@
+{
+  "name": "opencode-intro-og",
+  "version": "1.0.0",
+  "private": true,
+  "description": "OG image generator for the OpenCode intro article (1200x630, zero runtime deps)",
+  "scripts": {
+    "test": "node test-og-layout.js && node test-og-render.js",
+    "test:layout": "node test-og-layout.js",
+    "test:render": "node test-og-render.js",
+    "setup": "npx playwright install chromium"
+  },
+  "devDependencies": {
+    "playwright-core": "1.49.1"
+  }
+}
