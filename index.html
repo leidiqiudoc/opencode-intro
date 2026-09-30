@@ -1043,37 +1043,40 @@
     const img = imageUrl();
     const page = pageUrl();
     const article = escapeAttr(ui.articleUrl.value.trim());
-    const raw = ui.subtitle.value.trim();
 
+    // WeChat's link scraper is far less standards-compliant than the Facebook
+    // and Twitter crawlers. To widen the set of heuristics that succeed:
+    //  - og:image first in <head>, some scrapers read sequentially
+    //  - schema.org itemprop as an independent signal
+    //  - <link rel=image_src>, an older convention still honoured
+    //  - the <img> src is absolute, not relative: a scraper that does not
+    //    resolve relative URLs would otherwise find nothing
     return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${title}</title>
-<meta name="description" content="${desc}">
-
-<!-- Open Graph：微信 / X / Facebook / LinkedIn 分享时读取 -->
-<meta property="og:type" content="article">
-<meta property="og:url" content="${page}">
-<meta property="og:title" content="${title}">
-<meta property="og:description" content="${desc}">
 <meta property="og:image" content="${img}">
 <meta property="og:image:secure_url" content="${img}">
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
+<meta property="og:title" content="${title}">
+<meta property="og:description" content="${desc}">
+<meta property="og:url" content="${page}">
+<meta property="og:type" content="article">
 <meta property="og:site_name" content="${title}">
-
-<!-- Twitter / X -->
+<link rel="image_src" href="${img}">
+<title>${title}</title>
+<meta name="description" content="${desc}">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:url" content="${page}">
 <meta name="twitter:title" content="${title}">
 <meta name="twitter:description" content="${desc}">
 <meta name="twitter:image" content="${img}">
-<meta name="twitter:image:width" content="1200">
-<meta name="twitter:image:height" content="630">
-
+<meta itemprop="name" content="${title}">
+<meta itemprop="description" content="${desc}">
+<meta itemprop="image" content="${img}">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
@@ -1128,7 +1131,7 @@
 <body>
 <main>
   <div class="card">
-    <img src="og/${slugify(currentTitle())}.png" alt="${title}" width="1200" height="630">
+    <img src="${img}" alt="${title}" width="1200" height="630">
     <div class="body">
       <h1>${title}</h1>
       <div class="row">

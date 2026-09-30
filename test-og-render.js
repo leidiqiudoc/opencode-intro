@@ -249,8 +249,9 @@ print(json.dumps({
     "twitter card": /name="twitter:card" content="summary_large_image"/.test(pageHtml),
     "dimensions": /og:image:width" content="1200"/.test(pageHtml) && /og:image:height" content="630"/.test(pageHtml),
     "CTA to juejin": /href="https:\/\/juejin\.cn\/post\/7690398241330544666"/.test(pageHtml),
-    // the <img src> must point at the same member the zip actually contains
-    "img tag matches og:image": pageHtml.includes('src="' + pngName + '"')
+    // the <img src> is absolute (naive scrapers do not resolve relative URLs)
+    // and must end with the member name the zip actually contains
+    "img tag matches og:image": new RegExp('<img src="https://[^"]*' + pngName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + '"').test(pageHtml)
   };
   for (const [k, v] of Object.entries(metaChecks)) {
     console.log((v ? "  ok   " : "  FAIL ") + "  " + k);
@@ -259,10 +260,31 @@ print(json.dumps({
   console.log((pngOk ? "  ok   " : "  FAIL ") + "  bundled PNG is " + png.readUInt32BE(16) + "x" + png.readUInt32BE(20) +
     " (" + (png.length / 1024).toFixed(0) + "KB)");
 
-  // render the extracted page to confirm it is not broken
+  // The page references its image by absolute URL, so the site origin is
+  // intercepted and served from the extracted bundle: hermetic, and it also
+  // proves the absolute URL maps onto a file that actually exists. The origin
+  // comes from the page itself (this suite uses a fake site address).
+  const sitePrefix = (pageHtml.match(/property="og:image" content="(.*?)\/og\/[^"]*"/) || [])[1] + "/";
+  if (!sitePrefix || sitePrefix === "undefined/") throw new Error("could not derive site prefix from og:image");
   const deployed = await browser.newPage();
   const depErrors = [];
+  const missing = [];
   deployed.on("pageerror", (e) => depErrors.push(e.message));
+  const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  await deployed.route(new RegExp("^" + esc(sitePrefix)), (route) => {
+    const rel = decodeURIComponent(new URL(route.request().url()).pathname).replace(sitePrefix.replace(/^https?:\/\/[^/]+/, ""), "");
+    const f = path.join(extracted, rel);
+    if (fs.existsSync(f) && fs.statSync(f).isFile()) {
+      route.fulfill({
+        status: 200,
+        contentType: rel.endsWith(".png") ? "image/png" : "text/html; charset=utf-8",
+        body: fs.readFileSync(f)
+      });
+    } else {
+      missing.push(rel);
+      route.fulfill({ status: 404, body: "not found" });
+    }
+  });
   await deployed.goto("file://" + path.join(extracted, "index.html"), { waitUntil: "load" });
   await deployed.evaluate(() => document.fonts.ready);
   const depInfo = await deployed.evaluate(() => {
@@ -270,17 +292,20 @@ print(json.dumps({
     return {
       loaded: img.complete && img.naturalWidth > 0,
       natural: [img.naturalWidth, img.naturalHeight],
+      src: img.getAttribute("src"),
       ogImage: (document.querySelector('meta[property="og:image"]') || {}).content
     };
   });
-  console.log((depInfo.loaded && depInfo.natural[0] === 1200 ? "  ok   " : "  FAIL ") +
-    "  deployed page renders, hero image loads " + depInfo.natural.join("x"));
+  console.log((depInfo.loaded && depInfo.natural[0] === 1200 && missing.length === 0 ? "  ok   " : "  FAIL ") +
+    "  deployed page renders, absolute hero image resolves " + depInfo.natural.join("x"));
+  if (missing.length) console.log("  FAIL  absolute URL 404s: " + missing.join(", "));
+  console.log("         img src  → " + depInfo.src);
   console.log("         og:image → " + depInfo.ogImage);
-  await deployed.screenshot({ path: path.join(OUT, "_deployed.png") });
   if (depErrors.length) console.log("  FAIL  deployed page errors: " + depErrors.join("; "));
+  await deployed.screenshot({ path: path.join(OUT, "_deployed.png") });
   await deployed.close();
 
-  const bundleOk = zipOk && Object.values(metaChecks).every(Boolean) && pngOk && depInfo.loaded && !depErrors.length;
+  const bundleOk = zipOk && Object.values(metaChecks).every(Boolean) && pngOk && depInfo.loaded && !depErrors.length && !missing.length;
 
   console.log("\n=== card preview panel ===");
   const pv = await page.evaluate(() => {
