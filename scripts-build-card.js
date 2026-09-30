@@ -1,13 +1,17 @@
-// Generates the deployable card into ./card by driving the real page in
+// Generates the deployable card into ./docs by driving the real page in
 // Chromium and clicking the actual "下载发布包" button, so the artifact is
 // produced by the same code path a user would use.
+//
+// ./docs because GitHub Pages only offers "/" and "/docs" as a publishing
+// source; "/docs" is served at the repo root path, so og:image stays
+// https://<user>.github.io/<repo>/og/<slug>.png
 const { chromium } = require("playwright-core");
 const { execFileSync } = require("child_process");
 const path = require("path");
 const fs = require("fs");
 
 const ROOT = __dirname;
-const OUT = path.join(ROOT, "card");
+const OUT = path.join(ROOT, "docs");
 const SITE = "https://leidiqiudoc.github.io/opencode-intro/";
 
 (async () => {
@@ -45,7 +49,7 @@ const SITE = "https://leidiqiudoc.github.io/opencode-intro/";
   fs.mkdirSync(path.dirname(tmpZip), { recursive: true });
   await dl.saveAs(tmpZip);
 
-  // extract into card/
+  // extract into docs/
   fs.rmSync(OUT, { recursive: true, force: true });
   fs.mkdirSync(OUT, { recursive: true });
   const py = `

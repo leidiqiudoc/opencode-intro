@@ -1,11 +1,11 @@
-// Serves ./card over HTTP and asserts the deployed page is self-consistent:
+// Serves ./docs over HTTP and asserts the deployed page is self-consistent:
 // every asset the HTML references resolves, and og:image points at a real file.
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const { chromium } = require("playwright-core");
 
-const ROOT = path.join(__dirname, "card");
+const ROOT = path.join(__dirname, "docs");
 const SITE = "https://leidiqiudoc.github.io/opencode-intro/";
 const TYPES = { ".html": "text/html; charset=utf-8", ".png": "image/png" };
 
@@ -29,7 +29,7 @@ const server = http.createServer((req, res) => {
 (async () => {
   await new Promise((r) => server.listen(0, r));
   const base = "http://127.0.0.1:" + server.address().port + "/";
-  console.log("serving ./card at " + base + "\n");
+  console.log("serving ./docs at " + base + "\n");
 
   const html = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
   const ogImage = (html.match(/property="og:image" content="([^"]+)"/) || [])[1];
@@ -80,6 +80,6 @@ const server = http.createServer((req, res) => {
   await browser.close();
   server.close();
 
-  console.log(fail ? "\n" + fail + " PROBLEM(S)" : "\ncard is deployment-ready");
+  console.log(fail ? "\n" + fail + " PROBLEM(S)" : "\ndocs/ is deployment-ready (Pages source: main + /docs)");
   process.exit(fail ? 1 : 0);
 })();
