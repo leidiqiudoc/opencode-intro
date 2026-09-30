@@ -1039,10 +1039,10 @@
 
   function publishPage() {
     const title = escapeAttr(currentTitle());
-    const desc = escapeAttr(ui.subtitle.value.trim());
     const img = imageUrl();
     const page = pageUrl();
     const article = escapeAttr(ui.articleUrl.value.trim());
+    const sub = escapeHtml(ui.subtitle.value.trim());
 
     // WeChat's link scraper is far less standards-compliant than the Facebook
     // and Twitter crawlers. To widen the set of heuristics that succeed:
@@ -1051,6 +1051,12 @@
     //  - <link rel=image_src>, an older convention still honoured
     //  - the <img> src is absolute, not relative: a scraper that does not
     //    resolve relative URLs would otherwise find nothing
+    //
+    // No og:description / twitter:description / meta description is emitted on
+    // purpose. The card image already renders the title and the subtitle, so
+    // repeating them in the card's text layer shows the same sentence twice -
+    // once inside the image, once beside it. WeChat also tends to run title and
+    // description together without a line break, which reads as garbled text.
     return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -1061,20 +1067,16 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:title" content="${title}">
-<meta property="og:description" content="${desc}">
 <meta property="og:url" content="${page}">
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="${title}">
 <link rel="image_src" href="${img}">
 <title>${title}</title>
-<meta name="description" content="${desc}">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:url" content="${page}">
 <meta name="twitter:title" content="${title}">
-<meta name="twitter:description" content="${desc}">
 <meta name="twitter:image" content="${img}">
 <meta itemprop="name" content="${title}">
-<meta itemprop="description" content="${desc}">
 <meta itemprop="image" content="${img}">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
@@ -1101,11 +1103,8 @@
   }
   .card img { display: block; width: 100%; height: auto; }
   .body { padding: 26px 30px 30px; }
-  h1 {
-    position: absolute; width: 1px; height: 1px;
-    padding: 0; margin: -1px; overflow: hidden;
-    clip: rect(0 0 0 0); white-space: nowrap; border: 0;
-  }
+  h1 { margin: 0 0 6px; font-size: 22px; line-height: 1.4; letter-spacing: .2px; }
+  p { margin: 0 0 20px; color: #a1a1aa; font-size: 14.5px; line-height: 1.65; }
   .row {
     display: flex; align-items: center; gap: 18px;
     flex-wrap: wrap; justify-content: space-between;
@@ -1122,10 +1121,6 @@
     white-space: nowrap;
   }
   a.cta:hover { background: #fff; }
-  .meta {
-    font-size: 12px; color: #6b6b73;
-    font-family: ui-monospace, Menlo, Consolas, monospace;
-  }
 </style>
 </head>
 <body>
@@ -1134,9 +1129,9 @@
     <img src="${img}" alt="${title}" width="1200" height="630">
     <div class="body">
       <h1>${title}</h1>
+      ${sub ? `<p>${sub}</p>` : ""}
       <div class="row">
         <a class="cta" href="${article}" target="_blank" rel="noopener">在掘金查看原文 →</a>
-        <span class="meta">og:image · 1200×630</span>
       </div>
     </div>
   </div>

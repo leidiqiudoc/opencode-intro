@@ -57,6 +57,18 @@ const server = http.createServer((req, res) => {
   check("itemprop image present (schema.org)", /<meta itemprop="image"/.test(html));
   check("link rel=image_src present", /<link rel="image_src"/.test(html));
 
+  // The card image already renders title + subtitle. Any description tag would
+  // repeat that sentence in the card's text layer, and WeChat runs title and
+  // description together without a line break, which reads as garbled text.
+  for (const tag of ["og:description", "twitter:description", 'name="description"', 'itemprop="description"']) {
+    check("no " + tag + " (avoid duplicated / un-broken text)", !html.includes(tag));
+  }
+  check("subtitle is not in any meta tag", !/content="从大模型原理到/.test(html));
+  // but it must still be visible on the page itself
+  check("subtitle visible in the page body", /<p>从大模型原理到[^<]*<\/p>/.test(html));
+  check("title visible as an h1", /<h1>[^<]+<\/h1>/.test(html));
+  check("no debug text in the body", !html.includes("1200×630</span>"));
+
   // the file the meta points at must exist, byte for byte
   const onDisk = path.join(ROOT, ogRel || "");
   check("og:image file exists on disk", fs.existsSync(onDisk), path.relative(ROOT, onDisk));
